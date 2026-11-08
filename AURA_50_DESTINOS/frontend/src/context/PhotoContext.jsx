@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { destinations } from '../data/destinations.js';
+import { fileNameKey, looksLikeLandscapePhoto } from '../utils/photoSafety.mjs';
 
 const PhotoContext = createContext(null);
 const WIKIPEDIA_API = 'https://en.wikipedia.org/w/api.php';
@@ -7,36 +8,136 @@ const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 
 function fileSource(filename) {
   if (!filename) return '';
-  return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(filename.replace(/^File:/, ''))}`;
+  return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(filename.replace(/^File:/i, ''))}`;
 }
 
 function plainText(value) {
-  return String(value || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#39;/g, "'").trim();
+  return String(value || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .trim();
 }
 
-function photoFromImageInfo(file) {
-  const info = file.imageinfo?.[0];
-  if (!info?.thumburl && !info?.url) return null;
-  if (!info.mime?.startsWith('image/') || info.mime === 'image/svg+xml') return null;
-  if ((info.width || 0) < 850 || (info.height || 0) < 540) return null;
-  if (/map|flag|logo|coat.of.arms|locator|emblem|diagram|icon|seal/i.test(file.title || '')) return null;
+function makePhoto(file) {
+  const info = file?.imageinfo?.[0];
+  if (!looksLikeLandscapePhoto(file?.title, info)) return null;
   return {
     url: info.thumburl || info.url,
     source: info.descriptionurl || fileSource(file.title),
     credit: plainText(info.extmetadata?.Artist?.value) || 'Colaboradores do Wikimedia Commons',
-    license: plainText(info.extmetadata?.LicenseShortName?.value) || 'Consultar licença',
+    license: plainText(info.extmetadata?.LicenseShortName?.value) || 'Consultar licença no arquivo original',
   };
 }
 
-const defaultPhoto = (destination, url = destination?.hero) => ({
-  url,
-  source: destination?.photoCredit?.source || '',
-  credit: destination?.photoCredit?.credit || '',
-  license: destination?.photoCredit?.license || '',
-});
+function defaultPhoto(destination, url = destination?.hero) {
+  return {
+    url,
+    source: destination?.photoCredit?.source || '',
+    credit: destination?.photoCredit?.credit || '',
+    license: destination?.photoCredit?.license || '',
+  };
+}
 
-// As fotos da Wikipedia são carregadas em lotes pequenos, sem chave e sem back-end.
-// Se a fonte externa estiver indisponível, a arte vetorial do próprio projeto continua visível.
+async function wikiRequest(api, params) {
+  const url = new URL(api);
+  Object.entries({ action: 'query', format: 'json', formatversion: '2', origin: '*', ...params })
+    .forEach(([key, value]) => url.searchParams.set(key, String(value)));
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Wikimedia temporariamente indisponível');
+  return response.json();
+}
+
+async function lookupFiles(files, size = 1600) {
+  if (!files.length) return [];
+  const data = await wikiRequest(COMMONS_API, {
+    prop: 'imageinfo',
+    titles: files.map((filename) => filename.startsWith('File:') ? filename : `File:${filename}`).join('|'),
+    iiprop: 'url|size|mime|extmetadata',
+    iiextmetadatafilter: 'Artist|LicenseShortName|ImageDescription',
+    iiurlwidth: size,
+  });
+  return data.query?.pages || [];
+}
+
+// Tenta uma fotografia de capa da própria página da Wikipédia, mas valida o arquivo
+// antes de exibi-lo. Isso impede que uma bandeira ou mapa apareça por um instante.
+async function wikipediaCovers(group) {
+  const data = await wikiRequest(WIKIPEDIA_API, {
+    redirects: '1',
+    prop: 'pageimages',
+    piprop: 'thumbnail|name',
+    pithumbsize: '1600',
+    titles: group.map((destination) => destination.wikiTitle).join('|'),
+  });
+  const redirects = new Map((data.query?.redirects || [])
+    .map(({ from, to }) => [from.toLowerCase(), to.toLowerCase()]));
+  const normalized = new Map((data.query?.normalized || [])
+    .map(({ from, to }) => [from.toLowerCase(), to.toLowerCase()]));
+  const pages = new Map((data.query?.pages || []).map((page) => [page.title?.toLowerCase(), page]));
+  const candidates = new Map();
+
+  for (const destination of group) {
+    let title = destination.wikiTitle.toLowerCase();
+    title = normalized.get(title) || title;
+    title = redirects.get(title) || title;
+    const filename = pages.get(title)?.pageimage;
+    if (filename) candidates.set(destination.id, filename);
+  }
+  const files = await lookupFiles([...new Set(candidates.values())]);
+  const found = new Map(files.map((file) => [fileNameKey(file.title), makePhoto(file)]));
+  const photos = {};
+  for (const [id, filename] of candidates) {
+    const photo = found.get(fileNameKey(filename));
+    if (photo) photos[id] = photo;
+  }
+  return photos;
+}
+
+// Se a página principal trouxer apenas um mapa, busca fotografias no Commons.
+// A busca nunca é exibida sem a validação de título, tipo e dimensões da imagem.
+async function searchPhotos(destination, limit = 4) {
+  const queries = [destination.galleryQuery || destination.wikiTitle];
+  for (const query of queries) {
+    const data = await wikiRequest(COMMONS_API, {
+      generator: 'search',
+      gsrnamespace: '6',
+      gsrlimit: '32',
+      gsrsearch: query,
+      prop: 'imageinfo',
+      iiprop: 'url|size|mime',
+      iiurlwidth: '1400',
+    });
+    const files = (data.query?.pages || []).filter((file) =>
+      looksLikeLandscapePhoto(file.title, file.imageinfo?.[0])
+    );
+    // Resultados mais próximos do nome do destino vêm antes.
+    const terms = destination.wikiTitle.toLowerCase().split(/[^\p{L}]+/u).filter((t) => t.length > 3);
+    files.sort((a, b) => {
+      const score = (file) => terms.filter((word) => file.title.toLowerCase().includes(word)).length;
+      return score(b) - score(a);
+    });
+    if (files.length) {
+      const selected = files.slice(0, limit);
+      try {
+        const details = await lookupFiles(selected.map((file) => file.title), 1400);
+        const credited = details.map(makePhoto).filter(Boolean);
+        if (credited.length) return credited;
+      } catch {
+        // Os links para os arquivos originais continuam disponíveis se os créditos falharem.
+      }
+      return selected.map((file) => ({
+        url: file.imageinfo[0].thumburl || file.imageinfo[0].url,
+        source: file.imageinfo[0].descriptionurl || fileSource(file.title),
+        credit: 'Colaboradores do Wikimedia Commons',
+        license: 'Consultar licença no arquivo original',
+      }));
+    }
+  }
+  return [];
+}
+
 export function PhotoProvider({ children }) {
   const [covers, setCovers] = useState({});
   const [gallery, setGallery] = useState({});
@@ -44,71 +145,22 @@ export function PhotoProvider({ children }) {
 
   useEffect(() => {
     let active = true;
-    const pending = destinations.filter((d) => d.wikiTitle && !d.photoCredit);
+    const pending = destinations.filter((destination) => destination.wikiTitle && !destination.photoCredit);
     const chunks = [];
-    for (let i = 0; i < pending.length; i += 22) chunks.push(pending.slice(i, i + 22));
+    for (let i = 0; i < pending.length; i += 12) chunks.push(pending.slice(i, i + 12));
 
-    Promise.allSettled(chunks.map(async (group) => {
-      const params = new URLSearchParams({
-        action: 'query', format: 'json', formatversion: '2', origin: '*', redirects: '1',
-        prop: 'pageimages', piprop: 'thumbnail|name', pithumbsize: '1600',
-        titles: group.map((d) => d.wikiTitle).join('|'),
-      });
-      const response = await fetch(`${WIKIPEDIA_API}?${params}`);
-      if (!response.ok) throw new Error('Serviço de fotos indisponível');
-      const data = await response.json();
-      const redirects = new Map((data.query?.redirects || []).map(({ from, to }) => [from.toLowerCase(), to.toLowerCase()]));
-      const normalized = new Map((data.query?.normalized || []).map(({ from, to }) => [from.toLowerCase(), to.toLowerCase()]));
-      const pages = new Map((data.query?.pages || []).map((p) => [p.title?.toLowerCase(), p]));
-      const result = {};
-      const imageFiles = new Map();
-      group.forEach((d) => {
-        let title = d.wikiTitle.toLowerCase();
-        title = normalized.get(title) || title;
-        title = redirects.get(title) || title;
-        const page = pages.get(title);
-        if (page?.thumbnail?.source) {
-          result[d.id] = {
-            url: page.thumbnail.source,
-            source: fileSource(page.pageimage),
-            credit: 'Wikimedia Commons',
-            license: 'Ver atribuição e licença no arquivo original',
-          };
-          if (page.pageimage) imageFiles.set(page.pageimage.toLowerCase(), d.id);
-        }
-      });
-
-      // Obtém os créditos reais das imagens, sempre que a origem for Wikimedia Commons.
-      if (imageFiles.size) {
-        try {
-          const creditsQuery = new URLSearchParams({
-            action: 'query', format: 'json', formatversion: '2', origin: '*',
-            prop: 'imageinfo', iiprop: 'url|extmetadata',
-            titles: [...imageFiles.keys()].map((name) => `File:${name}`).join('|'),
-          });
-          const creditsResponse = await fetch(`${COMMONS_API}?${creditsQuery}`);
-          if (creditsResponse.ok) {
-            const credits = await creditsResponse.json();
-            for (const page of credits.query?.pages || []) {
-              const id = imageFiles.get(page.title?.replace(/^File:/, '').toLowerCase());
-              const details = page.imageinfo?.[0];
-              if (id && details) {
-                result[id] = {
-                  ...result[id],
-                  source: details.descriptionurl || result[id].source,
-                  credit: plainText(details.extmetadata?.Artist?.value) || result[id].credit,
-                  license: plainText(details.extmetadata?.LicenseShortName?.value) || result[id].license,
-                };
-              }
-            }
-          }
-        } catch { /* A imagem segue visível, com um link para consultar os créditos. */ }
-      }
-      return result;
-    })).then((results) => {
+    Promise.allSettled(chunks.map(wikipediaCovers)).then(async (results) => {
       if (!active) return;
-      const loaded = Object.assign({}, ...results.filter((r) => r.status === 'fulfilled').map((r) => r.value));
-      setCovers(loaded);
+      const valid = Object.assign({}, ...results.filter((result) => result.status === 'fulfilled').map((result) => result.value));
+      setCovers(valid);
+      const missing = pending.filter((destination) => !valid[destination.id]);
+      // Limita buscas simultâneas para não sobrecarregar o serviço público.
+      for (let i = 0; i < missing.length && active; i += 3) {
+        await Promise.allSettled(missing.slice(i, i + 3).map(async (destination) => {
+          const photos = await searchPhotos(destination, 1);
+          if (active && photos[0]) setCovers((current) => ({ ...current, [destination.id]: photos[0] }));
+        }));
+      }
     });
     return () => { active = false; };
   }, []);
@@ -116,19 +168,12 @@ export function PhotoProvider({ children }) {
   const loadGallery = useCallback(async (destination) => {
     if (!destination?.wikiTitle || requestedGalleries.current.has(destination.id)) return;
     requestedGalleries.current.add(destination.id);
-    const params = new URLSearchParams({
-      action: 'query', format: 'json', formatversion: '2', origin: '*',
-      generator: 'search', gsrnamespace: '6', gsrlimit: '18',
-      gsrsearch: destination.galleryQuery || destination.wikiTitle,
-      prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '1400',
-    });
     try {
-      const response = await fetch(`${COMMONS_API}?${params}`);
-      if (!response.ok) return;
-      const data = await response.json();
-      const photos = (data.query?.pages || []).map(photoFromImageInfo).filter(Boolean);
+      const photos = await searchPhotos(destination, 5);
       if (photos.length) setGallery((current) => ({ ...current, [destination.id]: photos.slice(0, 4) }));
-    } catch { /* O conteúdo local permanece acessível mesmo se a Wikimedia estiver offline. */ }
+    } catch {
+      requestedGalleries.current.delete(destination.id);
+    }
   }, []);
 
   const value = useMemo(() => ({ covers, gallery, loadGallery }), [covers, gallery, loadGallery]);
@@ -138,11 +183,13 @@ export function PhotoProvider({ children }) {
 export function useDestinationPhoto(destination) {
   const ctx = useContext(PhotoContext);
   if (!ctx) throw new Error('useDestinationPhoto precisa de PhotoProvider');
-  const primary = destination?.photoCredit ? defaultPhoto(destination) : (ctx.covers[destination?.id] || defaultPhoto(destination));
+  const primary = destination?.photoCredit
+    ? defaultPhoto(destination)
+    : (ctx.covers[destination?.id] || defaultPhoto(destination));
   let photos = [];
   if (destination) {
     if (destination.wikiTitle) {
-      photos = [primary, ...(ctx.gallery[destination.id] || []).filter((p) => p.url !== primary.url)].slice(0, 3);
+      photos = [primary, ...(ctx.gallery[destination.id] || []).filter((photo) => photo.url !== primary.url)].slice(0, 3);
       while (photos.length < 3) photos.push(defaultPhoto(destination, destination.gallery[photos.length] || destination.hero));
     } else {
       photos = destination.gallery.map((url) => defaultPhoto(destination, url));
