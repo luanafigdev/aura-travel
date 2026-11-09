@@ -1,29 +1,41 @@
-# Fotografias — fontes, créditos e licenças
+# Fotografias e créditos — AURA
 
-## 1. Primeiros seis destinos
+O site usa fontes identificadas para os 100 destinos. A relação completa com o arquivo escolhido e o endereço da página original está em **AUDITORIA_FOTOGRAFIAS.md**.
 
-As fotografias da versão original são exibidas da CDN da [Unsplash](https://unsplash.com/license). A lista de IDs foi preservada no arquivo `frontend/src/data/destinations.js`. Algumas imagens secundárias são evocativas e podem não representar exatamente o destino.
+## Imagens externas
 
-- Costa Amalfitana: `photo-1533105079780-92b9be482077`, `photo-1516483638261-f4dbaf036963`, `photo-1523906834658-6e24ef2386f9`
-- Kyoto: `photo-1493976040374-85c8e12f0c0e`, `photo-1528360983277-13d401cdc186`, `photo-1493780474015-ba834fd0ce2f`
-- Islândia: `photo-1476610182048-b716b8518aae`, `photo-1531366936337-7c912a4589a7`, `photo-1500534623283-312aade485b7`
-- Marrakech: `photo-1489749798305-4fea3ae63d43`, `photo-1539020140153-e479b8c22e70`, `photo-1499856871958-5b9627545d1a`
-- Bali: `photo-1537996194471-e657df975ab4`, `photo-1537953773345-d172ccf13cf1`, `photo-1500534314209-a25ddb2bd429`
-- Patagônia: `photo-1464822759023-fed622ff2c3b`, `photo-1486870591958-9b9d0d1dda99`, `photo-1500530855697-b586d89ba3ee`
+- **99 destinos**: fotografias correspondentes a arquivos selecionados individualmente pelo nome no Wikimedia Commons (`frontend/src/data/curatedPhotos.js`). A interface consulta os metadados do arquivo no Commons e apresenta crédito, licença e link para a fonte na página do destino. A disponibilidade depende do serviço externo.
+- **Salvador**: *Panorâmica do Elevador Lacerda e Baía de Todos - os Santos (16092530160).jpg*; autor Turismo Bahia; licença CC BY-SA 2.0. Fonte: https://commons.wikimedia.org/wiki/File:Panor%C3%A2mica_do_Elevador_Lacerda_e_Ba%C3%ADa_de_Todos_-_os_Santos_(16092530160).jpg.
 
-## 2. Salvador — destaque da página inicial
+A seleção foi feita por identificação do local e conteúdo descrito pelo arquivo. Não podemos garantir 100% de correspondência visual ou disponibilidade sem baixar e inspecionar cada imagem exibida no navegador. Por segurança, se a origem não responder ou os metadados indicarem mapa, bandeira, arquivo não fotográfico ou dimensões insuficientes, o AURA utiliza **uma ilustração local do destino** em vez de buscar outra imagem aleatória.
 
-**Imagem:** Historic Centre of Salvador de Bahia Aerial View 2021-0915.jpg  
-**Autor:** Paul R. Burley  
-**Licença:** Creative Commons Attribution-ShareAlike 4.0 International (**CC BY-SA 4.0**).  
-**Fonte e detalhes:** https://commons.wikimedia.org/wiki/File:Historic_Centre_of_Salvador_de_Bahia_Aerial_View_2021-0915.jpg  
-**Licença:** https://creativecommons.org/licenses/by-sa/4.0/  
-**Nota:** A fotografia é exibida como thumbnail (redimensionamento fornecido pela Wikimedia). Sem outras modificações intencionais além do recorte visual via CSS.
+As licenças dos arquivos do Commons podem impor atribuição e compartilhamento sob a mesma licença. Consulte a página de cada arquivo e preserve créditos e condições de uso. O projeto é uma demonstração de front-end, não um catálogo de imagens licenciadas para redistribuição.
 
-## 3. Outros 43 destinos novos
+## Bibliotecas e tipografia
 
-Para evitar usar fotografias genéricas ou mostrar paisagens erradas, o AURA tenta obter a miniatura da página de **cada destino** via API pública da Wikipedia. Busca créditos na API de arquivos do **Wikimedia Commons**. A página individual mostra autor/licença e link para a página do arquivo, quando disponíveis; a galeria usa pesquisa contextual de imagens do Commons e oferece links para os arquivos originais.
+O site mantém as fontes e bibliotecas originais. A seleção de fotos do catálogo é feita por referência a arquivos do Commons, sem salvar imagens de terceiros dentro do repositório.
 
-Como as licenças variam por arquivo, **antes de republicar comercialmente, confira a licença, o crédito e as condições de cada fotografia individualmente**. As URLs externas podem variar ou ficar indisponíveis. Quando isso ocorre, o AURA usa ilustrações vetoriais próprias como fallback — sem fotos erradas de outro lugar.
 
-O catálogo textual é editorial e ilustrativo, não serviço de reservas; recomendações de épocas e passeios precisam de conferência antes de viagens reais.
+## Galeria de Salvador — fotografias adicionais
+
+- **Farol da Barra** — Paul R. Burley, **CC BY-SA 4.0**. Fonte: https://commons.wikimedia.org/wiki/File:Farol_da_Barra_Salvador_Bahia_2021-1735.jpg
+- **Elevador Lacerda e Baía de Todos-os-Santos** — Renatoasfe, **CC BY-SA 4.0**. Fonte: https://commons.wikimedia.org/wiki/File:Elevador_Lacerda,_vista_lateral.jpg
+
+As fotografias adicionais são carregadas diretamente do Wikimedia Commons, com atribuição individual na galeria e no visor ampliado. Caso algum endereço externo não carregue, o cartão correspondente é omitido em vez de exibir uma imagem genérica.
+
+
+## Fotografias editoriais restauradas na página inicial
+
+- **Costa Amalfitana**: imagem editorial original do projeto, publicada no Unsplash (identificador `photo-1533105079780-92b9be482077`), usada na abertura com o título *Vá onde a alma deseja*. A imagem continua sendo carregada pelo serviço Unsplash; consultar a licença do Unsplash.
+- **Kyoto, Islândia, Marrakech e Bali**: a página inicial volta a usar as imagens originais do projeto (Unsplash) em vez de ilustrações de reserva.
+- **Patagônia — Torres del Paine, Chile**: fotografia *Cuernos del Paine from Lake Pehoé.jpg*, de Miguel Vieira, declarada em domínio público pelo autor. Fonte: https://commons.wikimedia.org/wiki/File:Cuernos_del_Paine_from_Lake_Peho%C3%A9.jpg
+
+Essas fotografias editoriais são mantidas nos seis destinos originais enquanto os outros destinos conservam seu sistema de seleção de imagens. O site depende da disponibilidade das fontes de imagem externas.
+
+## Três fotografias revistas — novembro de 2026
+
+- **Alter do Chão (Santarém, Pará)**: *Alter do Chao, Estado do Para, Brazil.jpg*; JorgeFromBrazil; CC BY-SA 4.0. Fonte: https://commons.wikimedia.org/wiki/File:Alter_do_Chao,_Estado_do_Para,_Brazil.jpg.
+- **Salvador (BA)**: panorâmica do Elevador Lacerda com a Baía de Todos-os-Santos; Turismo Bahia; CC BY-SA 2.0. Fonte acima.
+- **Yellowstone (EUA)**: *Yellowstone Grand Prismatic.jpg*; David L. Sifry; CC BY-SA 3.0. Fonte: https://commons.wikimedia.org/wiki/File:Yellowstone_Grand_Prismatic.jpg.
+
+Para essas três páginas, a referência original da fotografia foi fixada no catálogo. Os arquivos seguem hospedados no Wikimedia Commons e seu carregamento exige acesso à internet. As fotografias não são ilustrações geradas.

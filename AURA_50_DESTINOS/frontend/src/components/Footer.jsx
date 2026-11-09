@@ -26,7 +26,7 @@ export default function Footer() {
     <div className="shell footer-bottom">
       <Link className="wordmark footer-logo" to="/">AURA<span className="wordmark-dot">.</span></Link>
       <p>Uma experiência de inspiração para viajar. Feita para explorar, não para reservar.</p>
-      <div className="footer-links"><Link to="/explorar">Destinos</Link><Link to="/colecao">Favoritos</Link><Link to="/roteiro">Roteiro</Link><button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Voltar ao topo"><ArrowUp size={17}/></button></div>
+      <div className="footer-links"><Link to="/explorar">Destinos</Link><Link to="/descubra">Quiz</Link><Link to="/colecao">Favoritos</Link><Link to="/roteiro">Roteiro</Link><button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Voltar ao topo"><ArrowUp size={17}/></button></div>
     </div>
     <div className="shell copyright"><span>© {new Date().getFullYear()} AURA — The art of going somewhere.</span><span>Um projeto conceitual de front-end.</span></div>
   </footer>;

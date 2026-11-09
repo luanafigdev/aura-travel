@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowDown, ArrowRight, ArrowUpRight, Compass, Globe2, Heart, MoveUpRight, Sparkles } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUpRight, Compass, Globe2, Heart, MoveUpRight, Sparkles, Shuffle } from 'lucide-react';
+import { randomDestination } from '../utils/quizEngine.mjs';
 import { destinations, byId } from '../data/destinations.js';
 import DestinationCard from '../components/DestinationCard.jsx';
 
@@ -10,6 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const heroRef = useRef(null);
+  const navigate = useNavigate();
   const salvador = byId('salvador');
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -19,6 +22,8 @@ export default function Home() {
     }, heroRef);
     return () => context.revert();
   }, []);
+
+  const surprise = () => navigate(`/destino/${randomDestination(destinations).id}`);
 
   return <>
     <section className="home-hero" ref={heroRef} aria-label="Boas-vindas ao AURA">
@@ -57,17 +62,21 @@ export default function Home() {
 
     <section className="salvador-spotlight" aria-labelledby="salvador-title">
       <div className="salvador-image">
-        <img src={salvador.hero} alt="Casarões e igrejas do Centro Histórico de Salvador, com o mar ao fundo" loading="lazy"/>
+        <img src={salvador.hero} alt="Elevador Lacerda visto do alto, com a Baía de Todos-os-Santos e o Forte de São Marcelo" loading="lazy"/>
         <span className="salvador-photo-label">SALVADOR, BAHIA · BRASIL</span>
       </div>
       <div className="salvador-content">
         <span className="eyebrow">DESTAQUE BRASILEIRO / NOSSO OLHAR</span>
-        <div className="salvador-smallline"><span>07 / 50</span><span>12°58′ S — 38°30′ W</span></div>
+        <div className="salvador-smallline"><span>07 / 100</span><span>12°58′ S — 38°30′ W</span></div>
         <h2 id="salvador-title">Salvador.<br/><em>O mundo começa aqui.</em></h2>
         <p>Azul de mar, casarões coloridos, história viva e uma cultura que se manifesta na música, na arte e em cada encontro. Um capítulo especial do AURA, dedicado à primeira capital do Brasil.</p>
         <Link to="/destino/salvador" className="btn btn-dark">Descobrir Salvador <ArrowUpRight size={18}/></Link>
-        <a className="salvador-credit" href={salvador.photoCredit.source} target="_blank" rel="noopener noreferrer">Fotografia: Paul R. Burley · CC BY-SA 4.0 ↗</a>
+        <a className="salvador-credit" href={salvador.photoCredit.source} target="_blank" rel="noopener noreferrer">Fotografia: {salvador.photoCredit.credit} · {salvador.photoCredit.license} ↗</a>
       </div>
+    </section>
+
+    <section className="discover-teaser section-space shell">
+      <div className="discover-teaser-copy"><span className="eyebrow">UM CONVITE À DESCOBERTA</span><h2 className="serif-title">O destino certo pode começar por uma <em>pergunta.</em></h2><p>Um quiz feito para encontrar lugares que combinam com você — ou, se preferir, entregue a próxima viagem ao acaso.</p><div className="discover-teaser-actions"><Link className="btn btn-dark" to="/descubra">Descobrir meu destino <ArrowUpRight size={18}/></Link><button type="button" className="btn btn-outline-dark" onClick={surprise}><Shuffle size={17}/> Deixa a vida me levar</button></div></div><div className="discover-teaser-art"><span>AURA · FIND YOUR PLACE</span><Globe2 size={130} strokeWidth={.55}/><p>O mundo tem um lugar esperando por você.</p></div>
     </section>
 
     <section className="manifesto-section">
@@ -80,5 +89,6 @@ export default function Home() {
     <section className="why-section section-space shell"><div className="why-heading"><span className="eyebrow">02 / A JORNADA É SUA</span><h2 className="serif-title">Inspiração para ir.<br/><em>Liberdade para escolher.</em></h2></div><div className="value-grid"><div className="value-card"><span className="value-index">01</span><Compass size={34} strokeWidth={1.15}/><h3>Descubra</h3><p>Explore paisagens, culturas e experiências que despertam a vontade de conhecer o mundo.</p></div><div className="value-card"><span className="value-index">02</span><Heart size={34} strokeWidth={1.15}/><h3>Guarde</h3><p>Salve seus destinos favoritos e monte uma coleção de lugares que fazem seus olhos brilhar.</p></div><div className="value-card"><span className="value-index">03</span><MoveUpRight size={34} strokeWidth={1.15}/><h3>Imagine</h3><p>Monte um roteiro do seu jeito, organize a ordem, escolha datas e anote suas ideias.</p></div></div></section>
 
     <section className="journal-section shell section-space"><div className="journal-visual"><img src={destinations[5].hero} alt="Paisagem de montanhas no horizonte" loading="lazy"/><div className="journal-label">POSTCARD Nº 006 <span>WISH YOU WERE HERE</span></div></div><div className="journal-copy"><span className="eyebrow">03 / SEU PRÓXIMO CAPÍTULO</span><h2 className="serif-title">Seu mundo.<br/>Suas rotas.<br/><em>Sua história.</em></h2><p>Guarde suas descobertas em uma coleção pessoal e transforme lugares favoritos em um roteiro que tem tudo a ver com você. Sem cadastro, sem complicação.</p><Link className="btn btn-dark" to="/roteiro">Criar meu roteiro <ArrowUpRight size={18}/></Link><span className="journal-small">SUAS ESCOLHAS FICAM SALVAS NESTE NAVEGADOR.</span></div></section>
+    <section id="por-que-aura" className="aura-meaning"><div className="shell aura-meaning-inner"><span className="eyebrow eyebrow-light">A HISTÓRIA POR TRÁS DO NOME</span><h2>Por que <em>AURA?</em></h2><p className="aura-meaning-intro">Porque cada lugar tem uma essência que não cabe em uma fotografia.</p><div className="aura-letters">{[['A','Aventuras'],['U','Únicas'],['R','Recordações'],['A','Atemporais']].map(([letter, word]) => <div className="aura-letter" key={word}><strong>{letter}</strong><span>{word}</span></div>)}</div><blockquote>“Porque nem tudo que passa pela nossa vida vai embora.”</blockquote><p className="aura-meaning-signature">THE ART OF GOING SOMEWHERE</p></div></section>
   </>;
 }

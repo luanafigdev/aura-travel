@@ -1,9 +1,15 @@
-// Fotografias via images.unsplash.com. Consulte CREDITOS_IMAGENS.md antes de reutilizar.
+import { moreDestinations } from './moreDestinations.js';
+import { curatedPhotoFiles } from './curatedPhotos.js';
+import { seasonDetails } from './seasonDetails.js';
+import { originalProfiles } from './travelProfile.js';
+
 const photo = (id, w = 1400) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=85`;
+const patagoniaPhoto = 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Cuernos_del_Paine_from_Lake_Peho%C3%A9.jpg/1280px-Cuernos_del_Paine_from_Lake_Peho%C3%A9.jpg';
 
 export const classicDestinations = [
   {
     id: 'costa-amalfitana',
+    wikiTitle: 'Amalfi Coast',
     name: 'Costa Amalfitana',
     short: 'Amalfi',
     country: 'Itália',
@@ -33,6 +39,7 @@ export const classicDestinations = [
   },
   {
     id: 'kyoto',
+    wikiTitle: 'Kyoto',
     name: 'Kyoto',
     short: 'Kyoto',
     country: 'Japão',
@@ -62,6 +69,7 @@ export const classicDestinations = [
   },
   {
     id: 'islandia',
+    wikiTitle: 'Iceland',
     name: 'Islândia',
     short: 'Islândia',
     country: 'Islândia',
@@ -91,6 +99,7 @@ export const classicDestinations = [
   },
   {
     id: 'marrakech',
+    wikiTitle: 'Marrakesh',
     name: 'Marrakech',
     short: 'Marrakech',
     country: 'Marrocos',
@@ -120,6 +129,7 @@ export const classicDestinations = [
   },
   {
     id: 'bali',
+    wikiTitle: 'Bali',
     name: 'Bali',
     short: 'Bali',
     country: 'Indonésia',
@@ -149,6 +159,7 @@ export const classicDestinations = [
   },
   {
     id: 'patagonia',
+    wikiTitle: 'Patagonia',
     name: 'Patagônia',
     short: 'Patagônia',
     country: 'Chile & Argentina',
@@ -162,13 +173,14 @@ export const classicDestinations = [
     bestSeason: 'Novembro a março',
     duration: '6–10 dias',
     mood: 'Montanhas, trilhas e amplitude',
-    hero: photo('photo-1464822759023-fed622ff2c3b', 2000),
-    card: photo('photo-1464822759023-fed622ff2c3b', 1100),
-    gallery: [
-      photo('photo-1464822759023-fed622ff2c3b', 1100),
-      photo('photo-1486870591958-9b9d0d1dda99', 1100),
-      photo('photo-1500530855697-b586d89ba3ee', 1100),
-    ],
+    hero: patagoniaPhoto,
+    card: patagoniaPhoto,
+    gallery: [patagoniaPhoto, patagoniaPhoto, patagoniaPhoto],
+    photoCredit: {
+      credit: 'Miguel Vieira',
+      license: 'Domínio público',
+      source: 'https://commons.wikimedia.org/wiki/File:Cuernos_del_Paine_from_Lake_Peho%C3%A9.jpg',
+    },
     highlights: ['Contemple os cenários de Torres del Paine', 'Explore vilas de montanha', 'Descubra lagos e mirantes panorâmicos'],
     days: [
       { title: 'O primeiro horizonte', text: 'Conheça a região, os mirantes e as paisagens que anunciam a imensidão patagônica.' },
@@ -1084,7 +1096,7 @@ export function illustratedFallback(name, region) {
 const extendedDestinations = FULL_DESTINATION_DATA.map((d, index) => {
   const illustration = illustratedFallback(d.name, d.region);
   const featuredSalvador = d.id === 'salvador';
-  const salvadorPhoto = 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Historic_Centre_of_Salvador_de_Bahia_Aerial_View_2021-0915.jpg/1280px-Historic_Centre_of_Salvador_de_Bahia_Aerial_View_2021-0915.jpg';
+  const salvadorPhoto = 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Panor%C3%A2mica_do_Elevador_Lacerda_e_Ba%C3%ADa_de_Todos_-_os_Santos_%2816092530160%29.jpg/1280px-Panor%C3%A2mica_do_Elevador_Lacerda_e_Ba%C3%ADa_de_Todos_-_os_Santos_%2816092530160%29.jpg';
   const originalPhoto = featuredSalvador ? salvadorPhoto : illustration;
   const [first, second, third] = d.highlights;
   return {
@@ -1094,9 +1106,9 @@ const extendedDestinations = FULL_DESTINATION_DATA.map((d, index) => {
     card: originalPhoto,
     gallery: [originalPhoto, illustration, illustration],
     ...(featuredSalvador ? { galleryQuery: 'Salvador Bahia Pelourinho', photoCredit: {
-      credit: 'Paul R. Burley', license: 'CC BY-SA 4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Historic_Centre_of_Salvador_de_Bahia_Aerial_View_2021-0915.jpg',
-      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+      credit: 'Turismo Bahia', license: 'CC BY-SA 2.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Panor%C3%A2mica_do_Elevador_Lacerda_e_Ba%C3%ADa_de_Todos_-_os_Santos_(16092530160).jpg',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/'
     } } : {}),
     quote: `O mundo se revela nos lugares que escolhemos conhecer. ${d.tagline}`,
     days: [
@@ -1107,6 +1119,61 @@ const extendedDestinations = FULL_DESTINATION_DATA.map((d, index) => {
   };
 });
 
-export const destinations = [...classicDestinations, ...extendedDestinations];
+const enrichedAdditional = moreDestinations.map((destination) => {
+  const fallback = illustratedFallback(destination.name, destination.region);
+  return {
+    ...destination,
+    hero: fallback,
+    card: fallback,
+    gallery: [fallback, fallback, fallback],
+    days: destination.highlights.map((item, index) => ({
+      title: item,
+      text: index === 0 ? `Comece por ${item.toLowerCase()}, um dos pontos mais representativos da região.` :
+        index === 1 ? `Inclua também ${item.toLowerCase()} e reserve tempo para apreciar o entorno.` :
+        `Complete a experiência com ${item.toLowerCase()}, respeitando o ritmo e as condições locais.`,
+    })),
+  };
+});
+
+const correctedDestinationPhotos = {
+  'alter-do-chao': {
+    url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/63/Alter_do_Chao%2C_Estado_do_Para%2C_Brazil.jpg/1280px-Alter_do_Chao%2C_Estado_do_Para%2C_Brazil.jpg',
+    credit: 'JorgeFromBrazil',
+    license: 'CC BY-SA 4.0',
+    source: 'https://commons.wikimedia.org/wiki/File:Alter_do_Chao,_Estado_do_Para,_Brazil.jpg',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  },
+  yellowstone: {
+    url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Yellowstone_Grand_Prismatic.jpg/1280px-Yellowstone_Grand_Prismatic.jpg',
+    credit: 'David L. Sifry',
+    license: 'CC BY-SA 3.0',
+    source: 'https://commons.wikimedia.org/wiki/File:Yellowstone_Grand_Prismatic.jpg',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+  },
+};
+
+const originalEditorialDestinations = new Set(classicDestinations.map((destination) => destination.id));
+
+export const destinations = [...classicDestinations, ...extendedDestinations, ...enrichedAdditional].map((destination) => {
+  const correctedPhoto = correctedDestinationPhotos[destination.id];
+  return {
+    ...destination,
+    ...(curatedPhotoFiles[destination.id] && !originalEditorialDestinations.has(destination.id) ? {
+      hero: illustratedFallback(destination.name, destination.region),
+      card: illustratedFallback(destination.name, destination.region),
+      gallery: Array(3).fill(illustratedFallback(destination.name, destination.region)),
+    } : {}),
+    ...(correctedPhoto ? {
+      hero: correctedPhoto.url,
+      card: correctedPhoto.url,
+      gallery: [correctedPhoto.url],
+      photoCredit: correctedPhoto,
+    } : {}),
+    seasonNote: destination.seasonNote || seasonDetails[destination.id] || '',
+    tags: destination.tags || (originalProfiles[destination.id] || '').split(',').filter(Boolean),
+    budget: destination.budget || (['Europa','Oceania','América do Norte'].includes(destination.region) ? 3 : 2),
+    days: destination.days || [],
+  };
+});
 export const byId = (id) => destinations.find((destination) => destination.id === id);
 export const regions = ['Todos', 'América do Sul', 'América do Norte', 'América Central & Caribe', 'Europa', 'Ásia', 'África', 'Oceania'];

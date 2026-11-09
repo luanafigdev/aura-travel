@@ -31,6 +31,7 @@ export default function Header() {
       <nav className={`main-nav ${menuOpen ? 'nav-open' : ''}`} aria-label="Navegação principal">
         <NavLink end to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Início</NavLink>
         <NavLink to="/explorar" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Destinos</NavLink>
+        <NavLink to="/descubra" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Descubra seu destino</NavLink>
         <NavLink to="/colecao" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Minha coleção <span className="nav-counter">{favorites.length}</span></NavLink>
         <Link className="nav-plan" to="/roteiro">Meu roteiro <span>{trip.length}</span><ArrowUpRight size={15} /></Link>
       </nav>

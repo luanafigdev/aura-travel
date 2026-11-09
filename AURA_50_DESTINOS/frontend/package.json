@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test:data": "node --test scripts/content.test.mjs"
+    "test:data": "node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "gsap": "^3.14.0",
